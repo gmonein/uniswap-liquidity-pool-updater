@@ -23,7 +23,7 @@ const WALLET = process.env.WALLET as string;
 const POSITION_MANAGER = process.env.POSITION_MANAGER as string;
 const FACTORY = process.env.FACTORY as string;
 const WHYPE = process.env.WHYPE as string;
-const HLUSD = process.env.HLUSD as string;
+const USDHL = process.env.USDHL as string;
 
 const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 const positionManager = new ethers.Contract(
@@ -73,9 +73,9 @@ export async function findLiquidityPool(): Promise<LiquidityPool | undefined> {
       liquidity: posRaw.liquidity,
     };
 
-    // Only WHYPE/HLUSD
-    if (!((pos.token0 === WHYPE && pos.token1 === HLUSD) ||
-          (pos.token0 === HLUSD && pos.token1 === WHYPE))) {
+    // Only WHYPE/USDHL
+    if (!((pos.token0 === WHYPE && pos.token1 === USDHL) ||
+          (pos.token0 === USDHL && pos.token1 === WHYPE))) {
       continue;
     }
     if (pos.liquidity.isZero()) { continue; }

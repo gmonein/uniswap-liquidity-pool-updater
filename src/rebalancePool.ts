@@ -14,7 +14,7 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY as string;
 const POSITION_MANAGER = process.env.POSITION_MANAGER as string;
 const POSITION_MODIFIER = process.env.POSITION_MODIFIER as string;
 const WHYPE = process.env.WHYPE as string;
-const HLUSD = process.env.HLUSD as string;
+const USDHL = process.env.USDHL as string;
 const WALLET = process.env.WALLET as string;
 
 const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
@@ -46,7 +46,7 @@ export async function refreshLiquidityPool(
   const modified = await positionModifier.rebalance(
     [
       WHYPE,
-      HLUSD,
+      USDHL,
       3000,
       lowerTick,
       upperTick, 0, 0, 0, 0,
