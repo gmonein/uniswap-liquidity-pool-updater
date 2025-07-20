@@ -1,4 +1,3 @@
-import { ethers } from "ethers";
 import { findLiquidityPool } from "./src/findEmptyLiquidityPool.ts";
 import { getTicksForRange } from "./src/getTickSpacing.ts";
 import { refreshLiquidityPool } from "./src/rebalancePool.ts";
@@ -28,23 +27,25 @@ async function logWalletContent(pool: LiquidityPool): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  setInterval(async () => {
-    const pool = await findLiquidityPool()
+  const pool = await findLiquidityPool()
 
-    if (!pool) {
-      console.log('No liquidity pool')
-      return
-    }
+  if (!pool) {
+    console.log('No liquidity pool')
+    return
+  }
 
-    logWalletContent(pool)
+  await logWalletContent(pool)
 
-    if (JSBI.equal(pool.amount0, JSBI.BigInt(0)) || JSBI.equal(pool.amount1, JSBI.BigInt(0))) {
-      console.log(`-- refresh pool ${(new Date()).toString()}`)
-      const { tickLower, tickUpper } = await getTicksForRange(pool.address, 0.9999999, 1.0000001)
+  if (JSBI.equal(pool.amount0, JSBI.BigInt(0)) || JSBI.equal(pool.amount1, JSBI.BigInt(0))) {
+    console.log(`-- refresh pool ${(new Date()).toString()}`)
+    const { tickLower, tickUpper } = await getTicksForRange(pool.address, 0.9999999, 1.0000001)
+    try { 
       refreshLiquidityPool(pool.id, tickLower, tickUpper)
-      return
+    } catch {
+      console.log('failed to refresh pool')
     }
-  }, 1_000 * 60 * 5)
+    return
+  }
 }
 
 
@@ -52,3 +53,7 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
+setInterval(() => {
+   main().catch((err) => { console.error(err) });
+}, 60_000 * 10)

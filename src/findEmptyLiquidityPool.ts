@@ -59,7 +59,7 @@ export async function findLiquidityPool(): Promise<LiquidityPool | undefined> {
   const balanceBN: ethers.BigNumber = await positionManager.balanceOf(WALLET);
   const count: number = balanceBN.toNumber();
 
-  for (let i = count - 5; i < count; i++) {
+  for (let i = count - 1; i < count; i++) {
     const tokenIdBN: ethers.BigNumber = await positionManager.tokenOfOwnerByIndex(WALLET, i);
     const tokenId: number = tokenIdBN.toNumber();
 
