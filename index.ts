@@ -1,11 +1,10 @@
-import { findLiquidityPool } from "./src/findEmptyLiquidityPool.ts";
+import { findLiquidityPool, type LiquidityPool } from "./src/findEmptyLiquidityPool.ts";
 import { getTicksForRange } from "./src/getTickSpacing.ts";
 import { refreshLiquidityPool } from "./src/rebalancePool.ts";
 import { getHypePrice } from "./src/getHypePrice.ts";
 
 import JSBI from 'jsbi';
 import { writeWalletLog } from "./src/writeWalletLog.ts";
-import type { LiquidityPool } from "./src/findEmptyLiquidityPool.ts";
 
 const CSV_PATH = './wallet-history.csv';
 
@@ -38,7 +37,7 @@ async function main(): Promise<void> {
 
   if (JSBI.equal(pool.amount0, JSBI.BigInt(0)) || JSBI.equal(pool.amount1, JSBI.BigInt(0))) {
     console.log(`-- refresh pool ${(new Date()).toString()}`)
-    const { tickLower, tickUpper } = await getTicksForRange(pool.address, 0.9999999, 1.0000001)
+    const { tickLower, tickUpper } = await getTicksForRange(pool.address, 0.90, 1.1)
     try { 
       refreshLiquidityPool(pool.id, tickLower, tickUpper)
     } catch {

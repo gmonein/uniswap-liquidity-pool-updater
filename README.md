@@ -3,9 +3,9 @@
 ## What ?
 
 Uniswap V3 offers the possibility to set ranges to liquidity pool  
-this script checks every 5 minutes if the current WHYPE / USDHL pool is active
-if the pool is active, it logs the pool value in HYPE and USDC
-if the pool is inactive, it updates the pools with the finest range possible
+this script checks every 5 minutes if the current WHYPE / USDHL pool is active  
+if the pool is active, it logs the pool value in HYPE and USDC  
+if the pool is inactive, it updates the pools with the finest range possible  
 
 <img width="1710" height="1660" alt="image" src="https://github.com/user-attachments/assets/ea487588-da08-4489-bcf9-82232924b96e" />
 
