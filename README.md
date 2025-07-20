@@ -7,6 +7,9 @@ this script checks every 5 minutes if the current WHYPE / USDHL pool is active
 if the pool is active, it logs the pool value in HYPE and USDC
 if the pool is inactive, it updates the pools with the finest range possible
 
+<img width="1710" height="1660" alt="image" src="https://github.com/user-attachments/assets/ea487588-da08-4489-bcf9-82232924b96e" />
+
+
 ## How ?
 
 Fill the .env file with your WALLET public key and PRIVATE\_KEY
@@ -30,3 +33,8 @@ Then run the script using ts-node
     npm install
     npx ts-node index.ts
 ```
+
+## TODO
+
+- Hedge the current pool position on Hyperliquid by shorting HYPE / USDC
+- Manage Ethereum fees to prevents spending more than liquidity pool rewards
