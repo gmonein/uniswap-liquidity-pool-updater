@@ -1,14 +1,14 @@
-import { findLiquidityPool, type LiquidityPool } from "./src/findEmptyLiquidityPool.ts";
-import { getTicksForRange } from "./src/getTickSpacing.ts";
-import { refreshLiquidityPool } from "./src/rebalancePool.ts";
-import { getHypePrice } from "./src/getHypePrice.ts";
+import { findLiquidityPool } from "./findEmptyLiquidityPool.ts";
+import { getTicksForRange } from "./getTickSpacing.ts";
+import { refreshLiquidityPool } from "./rebalancePool.ts";
+import { getHypePrice } from "./getHypePrice.ts";
 
 import JSBI from 'jsbi';
-import { writeWalletLog } from "./src/writeWalletLog.ts";
+import { writeWalletLog } from "./writeWalletLog.ts";
 
 const CSV_PATH = './wallet-history.csv';
 
-async function logWalletContent(pool: LiquidityPool): Promise<void> {
+async function logWalletContent(pool: any): Promise<void> {
   const hypePrice = await getHypePrice()
   if (hypePrice) {
     const hypeCentAmount = parseInt(JSBI.divide(pool.amount0, JSBI.BigInt('10000000000000000')).toString())
@@ -39,7 +39,7 @@ async function main(): Promise<void> {
     console.log(`-- refresh pool ${(new Date()).toString()}`)
     const { tickLower, tickUpper } = await getTicksForRange(pool.address, 0.90, 1.1)
     try { 
-      refreshLiquidityPool(pool.id, tickLower, tickUpper)
+      // refreshLiquidityPool(pool.id, tickLower, tickUpper)
     } catch {
       console.log('failed to refresh pool')
     }
@@ -47,12 +47,13 @@ async function main(): Promise<void> {
   }
 }
 
+const argv = process.argv.filter(a => !a.includes('index.ts') && !a.includes('ts-node'))
+async function runRefresher() { main().catch((err) => { console.error(err) }) }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (argv[0] == 'watch') {
+  runRefresher().catch((err) => { console.error(err); process.exit(1) })
+  setInterval(runRefresher, 60_000 * 10)
+}
 
-setInterval(() => {
-   main().catch((err) => { console.error(err) });
-}, 60_000 * 10)
+if (argv[0] == 'test') {
+}

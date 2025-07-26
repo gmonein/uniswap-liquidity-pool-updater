@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
+    "noEmit": true,
     "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "target": "es2020",
-    "module": "esnext",
+    "target": "ES2020",
+    "module": "CommonJS",
+    "outDir": "dist",
+    "rootDir": "src",
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "strict": true
-  }
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*.ts"]
 }

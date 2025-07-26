@@ -4,7 +4,7 @@ dotenv.config()
 import { ethers } from "ethers";
 
 const RPC_URL = process.env.RPC_URL as string;
-const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+const provider = new ethers.JsonRpcProvider(RPC_URL);
 
 export async function getTicksForRange(
   poolAddress: string,

@@ -1,22 +1,13 @@
 import * as dotenv from 'dotenv'
 dotenv.config()
 
-import { ethers } from 'ethers';
-import { createRequire } from 'module';
+import { ethers, toBigInt } from 'ethers';
 import JSBI from 'jsbi';
 import { TickMath, SqrtPriceMath } from '@uniswap/v3-sdk';
 
-const requireJson = createRequire(import.meta.url);
-
-const PositionManagerJson = requireJson(
-  '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json'
-) as { abi: any[] };
-const FactoryJson = requireJson(
-  '@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json'
-) as { abi: any[] };
-const PoolJson = requireJson(
-  '@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json'
-) as { abi: any[] };
+import { UniswapV3Pool__factory } from './types/abis/factories/UniswapV3Pool__factory.ts'
+import { NonfungiblePositionManager__factory } from './types/abis/factories/NonfungiblePositionManager__factory.ts'
+import { UniswapV3Factory__factory } from './types/abis/factories/UniswapV3Factory__factory.ts'
 
 const RPC_URL = process.env.RPC_URL as string;
 const WALLET = process.env.WALLET as string;
@@ -25,29 +16,21 @@ const FACTORY = process.env.FACTORY as string;
 const WHYPE = process.env.WHYPE as string;
 const USDHL = process.env.USDHL as string;
 
-const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-const positionManager = new ethers.Contract(
-  POSITION_MANAGER,
-  PositionManagerJson.abi,
-  provider
-);
-const factory = new ethers.Contract(
-  FACTORY,
-  FactoryJson.abi,
-  provider
-);
+const provider = new ethers.JsonRpcProvider(RPC_URL)
+const positionManager = NonfungiblePositionManager__factory.connect(POSITION_MANAGER, provider);
+const factory = UniswapV3Factory__factory.connect(FACTORY, provider);
 
 interface PositionData {
   token0: string;
   token1: string;
-  fee: number;
-  tickLower: number;
-  tickUpper: number;
-  liquidity: ethers.BigNumber;
+  fee: bigint;
+  tickLower: bigint;
+  tickUpper: bigint;
+  liquidity: bigint;
 }
 
-export type LiquidityPool = {
-  id: number;
+type LiquidityPool = {
+  id: bigint;
   address: string;
   token0: string;
   token1: string;
@@ -56,21 +39,21 @@ export type LiquidityPool = {
 }
 
 export async function findLiquidityPool(): Promise<LiquidityPool | undefined> {
-  const balanceBN: ethers.BigNumber = await positionManager.balanceOf(WALLET);
-  const count: number = balanceBN.toNumber();
+  const balanceBN = await positionManager.balanceOf(WALLET);
+  const count = toBigInt(balanceBN);
 
-  for (let i = count - 1; i < count; i++) {
-    const tokenIdBN: ethers.BigNumber = await positionManager.tokenOfOwnerByIndex(WALLET, i);
-    const tokenId: number = tokenIdBN.toNumber();
+  for (let i = count - BigInt(1); i < count; i++) {
+    const tokenIdBN = await positionManager.tokenOfOwnerByIndex(WALLET, i);
 
-    const posRaw = await positionManager.positions(tokenId);
+    const posRaw = await positionManager.positions(tokenIdBN);
+
     const pos: PositionData = {
       token0: posRaw.token0.toLowerCase(),
       token1: posRaw.token1.toLowerCase(),
       fee: posRaw.fee,
-      tickLower: posRaw.tickLower,
-      tickUpper: posRaw.tickUpper,
-      liquidity: posRaw.liquidity,
+      tickLower: toBigInt(posRaw.tickLower),
+      tickUpper: toBigInt(posRaw.tickUpper),
+      liquidity: toBigInt(posRaw.liquidity),
     };
 
     // Only WHYPE/USDHL
@@ -78,19 +61,37 @@ export async function findLiquidityPool(): Promise<LiquidityPool | undefined> {
           (pos.token0 === USDHL && pos.token1 === WHYPE))) {
       continue;
     }
-    if (pos.liquidity.isZero()) { continue; }
+    if (pos.liquidity == BigInt(0)) { continue; }
 
-    const poolAddress: string = await factory.getPool(posRaw.token0, posRaw.token1, pos.fee);
-    const poolC = new ethers.Contract(poolAddress, PoolJson.abi, provider);
-    const [liqCurBN, slot0]: [ethers.BigNumber, any] = await Promise.all([
+    const poolAddress = await factory.getPool(posRaw.token0, posRaw.token1, pos.fee);
+    const poolC = UniswapV3Pool__factory.connect(poolAddress, provider);
+    const [liqCurBN, slot0, global0, global1] = await Promise.all([
       poolC.liquidity(),
-      poolC.slot0()
+      poolC.slot0(),
+      poolC.feeGrowthGlobal0X128(),
+      poolC.feeGrowthGlobal1X128(),
     ]);
+
+    const delta0 = posRaw.feeGrowthInside0LastX128
+    const delta1 = posRaw.feeGrowthInside1LastX128
+
+    const Q128 = BigInt(2) ** BigInt(128);
+    const owed0 = pos.liquidity * delta0 / Q128;
+    const owed1 = pos.liquidity * delta1 / Q128;
+
+    const erc20 = [
+      new ethers.Contract(pos.token0, ["function decimals() view returns (uint8)"], provider),
+      new ethers.Contract(pos.token1, ["function decimals() view returns (uint8)"], provider)
+    ];
+    const [dec0, dec1] = await Promise.all(erc20.map(c => c.decimals()));
+    const human0 = ethers.formatUnits(owed0, dec0);
+    const human1 = ethers.formatUnits(owed1, dec1);
+    console.log(human0, human1)
 
     const liqCur: JSBI = JSBI.BigInt(liqCurBN.toString());
     const sqrtCurrent: JSBI = JSBI.BigInt(slot0.sqrtPriceX96.toString());
-    const sqrtLower: JSBI = TickMath.getSqrtRatioAtTick(pos.tickLower);
-    const sqrtUpper: JSBI = TickMath.getSqrtRatioAtTick(pos.tickUpper);
+    const sqrtLower: JSBI = TickMath.getSqrtRatioAtTick(Number(pos.tickLower));
+    const sqrtUpper: JSBI = TickMath.getSqrtRatioAtTick(Number(pos.tickUpper));
 
     let amount0: JSBI;
     let amount1: JSBI;
@@ -127,7 +128,7 @@ export async function findLiquidityPool(): Promise<LiquidityPool | undefined> {
     }
 
     return {
-      id: tokenId,
+      id: tokenIdBN,
       address: poolAddress,
       token0: pos.token0,
       token1: pos.token1,

@@ -1,21 +1,18 @@
 {
     "type": "module",
-    "name": "hyperswap-v3",
+    "name": "hyperswap-v3-cli",
     "version": "1.0.0",
     "description": "Template for Hyperswap V3 DEX interactions",
-    "main": "index.js",
     "scripts": {
-        "start": "node index.js",
-        "test": "echo \"No test specified\" && exit 0"
+        "start": "ts-node src/index.ts",
+        "generate:types": "typechain --target ethers-v6 --out-dir src/types/abis 'src/abis/*.json'"
     },
     "dependencies": {
-        "@ethersproject/abi": "^5.7.0",
-        "@ethersproject/contracts": "^5.7.0",
         "@uniswap/v3-periphery": "^1.4.4",
         "@uniswap/v3-sdk": "^3.25.2",
         "binding-pry-js": "^0.2.0",
         "dotenv": "^16.6.1",
-        "ethers": "^5.8.0"
+        "esm": "^3.2.25"
     },
     "keywords": [
         "dex",
@@ -23,9 +20,13 @@
         "hyperswap",
         "blockchain"
     ],
-    "author": "",
+    "author": "Gael Monein",
     "license": "ISC",
     "devDependencies": {
-        "ts-node": "^10.9.2"
+        "@typechain/ethers-v6": "^0.5.1",
+        "ethers": "^6.15.0",
+        "hardhat": "^2.26.1",
+        "ts-node": "^10.9.2",
+        "typechain": "^8.3.2"
     }
 }
